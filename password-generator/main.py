@@ -2,10 +2,22 @@ import secrets
 import os
 import time
 import json
+import codecs
 
 sleep_time = 2.5
 
-class PasswordGenerator():
+class CryptographyMixin():
+    """Provides methods for encryption and decryption"""
+
+    def encrypt(self, data):
+        encrypted = codecs.encode(data, 'rot_13')
+        return encrypted
+
+    def decrypt(self, data):
+        decrypted = codecs.decode(data, 'rot_13')
+        return decrypted
+
+class PasswordGenerator(CryptographyMixin):
     def __init__(self):
         self.__saved_passwords = {}
         self.__latest_password = None
@@ -73,7 +85,10 @@ class PasswordGenerator():
             refresh()
             return
 
-        self.__saved_passwords = {site:self.__latest_password}
+        safe_password = self.encrypt(self.__latest_password)
+        print(safe_password)
+
+        self.__saved_passwords = {site:safe_password}
 
         with open("passwords.json", "r") as file:
             passwords = json.load(file)
@@ -103,6 +118,7 @@ class PasswordGenerator():
         with open("passwords.json", "r") as file:
             data = json.load(file)
         for site, password in data.items():
+            password = self.decrypt(password)
             print(f"  {site}: {password}")
         
         refresh(10)
@@ -114,7 +130,7 @@ class PasswordGenerator():
             os.system("cls" if os.name == "nt" else "clear")
             print(r"""
             ------------------------------------------------
-            |   P 4 _ _ W 0 R D   G 3 N 3 R A 7 0 R   v.2  |
+            |   P 4 _ _ W 0 R D   G 3 N _ R A 7 0 R   v.2  |
             ------------------------------------------------
             
             | > Generate secure tokens                     |
