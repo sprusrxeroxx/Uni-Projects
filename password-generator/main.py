@@ -54,7 +54,6 @@ class PasswordGenerator():
         print(f"Your password is: {password}")
         refresh()
 
-    
     def save(self):
         """"Saves the latest generated password to a JSON file with the site name as the key."""
 
@@ -135,7 +134,7 @@ class PasswordGenerator():
             elif choice == '3':
                 self.show()
             elif choice == '4':
-                print("Exiting the program. Goodbye!")
+                print("Exiting the program. I'll be back!")
                 break
             else:
                 print("Invalid choice. Please enter a number between 1 and 4.")
