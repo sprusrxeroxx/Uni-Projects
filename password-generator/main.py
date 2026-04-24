@@ -6,8 +6,12 @@ import codecs
 
 sleep_time = 2.5
 
+def refresh(sleep_time=sleep_time):
+    time.sleep(sleep_time)
+    os.system("cls" if os.name == "nt" else "clear")
+
 class CryptographyMixin():
-    """Provides methods for encryption and decryption"""
+    """Provides methods for encryption and decryption using ROT13 cipher."""
 
     def encrypt(self, data):
         encrypted = codecs.encode(data, 'rot_13')
@@ -85,9 +89,7 @@ class PasswordGenerator(CryptographyMixin):
             refresh()
             return
 
-        safe_password = self.encrypt(self.__latest_password)
-        print(safe_password)
-
+        safe_password = self.encrypt(self.__latest_password) # Encrypt the password before saving
         self.__saved_passwords = {site:safe_password}
 
         with open("passwords.json", "r") as file:
@@ -118,7 +120,7 @@ class PasswordGenerator(CryptographyMixin):
         with open("passwords.json", "r") as file:
             data = json.load(file)
         for site, password in data.items():
-            password = self.decrypt(password)
+            password = self.decrypt(password) # Decrypt the password before displaying
             print(f"  {site}: {password}")
         
         refresh(10)
@@ -161,10 +163,6 @@ class PasswordGenerator(CryptographyMixin):
                 break
             else:
                 print("Invalid choice. Please enter a number between 1 and 4.")
-
-def refresh(sleep_time=sleep_time):
-    time.sleep(sleep_time)
-    os.system("cls" if os.name == "nt" else "clear")
 
 app = PasswordGenerator()
 app.run()
