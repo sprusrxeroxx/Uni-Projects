@@ -3,7 +3,7 @@ import os
 import time
 import json
 
-sleep_time = 3
+sleep_time = 2.5
 class PasswordGenerator():
     def __init__(self):
         self.__saved_passwords = {}
@@ -13,9 +13,12 @@ class PasswordGenerator():
         if not os.path.exists('passwords.json'):
             with open('passwords.json', 'w') as file:
                 json.dump({}, file)
+
+            # Set file permissions to read/write for the app and read-only for others
+            os.chmod('passwords.json', 0o644)
         
     def generate(self):
-        """"Generates a random password based on user input for length."""
+        """"Generates a random password based on user's desired password length."""
 
         letters = list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
         numbers = list("0123456789")
@@ -81,6 +84,8 @@ class PasswordGenerator():
             json.dump(passwords, f, indent=4)
 
         print(self.__saved_passwords)
+        self.__saved_passwords = {} # reset password dict for security reasons
+
         refresh()
 
     def show(self):
@@ -99,12 +104,13 @@ class PasswordGenerator():
         for site, password in data.items():
             print(f"  {site}: {password}")
         
-        refresh()
+        refresh(10)
     
     def run(self):
         """"Runs the main loop of the password generator application, allowing users to generate, save, and view passwords."""
 
         while True:
+            os.system('cls' if os.name == 'nt' else 'clear')
             print(r"""
             ------------------------------------------------
             |   P A S S W O R D   G E N E R A T O R   v.1  |
@@ -128,7 +134,7 @@ class PasswordGenerator():
                 if choice.lower() == 'y':
                     self.save()
                 else:
-                    refresh()
+                    refresh(1)
             elif choice == '2':
                 self.save()
             elif choice == '3':
@@ -139,7 +145,7 @@ class PasswordGenerator():
             else:
                 print("Invalid choice. Please enter a number between 1 and 4.")
 
-def refresh():
+def refresh(sleep_time=sleep_time):
     time.sleep(sleep_time)
     os.system('cls' if os.name == 'nt' else 'clear')
 
