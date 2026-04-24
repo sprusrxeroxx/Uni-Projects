@@ -1,10 +1,13 @@
-import random
+import secrets
+import os
+import time
+import json
 
+sleep_time = 3
 class PasswordGenerator():
-    
-    def _init_(self):
-        self.saved_passwords = {}
-        self.__latest_password = null
+    def __init__(self):
+        self.__saved_passwords = {}
+        self.__latest_password = None
         
     def generate(self):
         letters = list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -24,16 +27,17 @@ class PasswordGenerator():
                 print("Error: Please enter a Non-Zero length")
                 return
             
-            random_letter = random.choice(letters)
+            random_letter = secrets.choice(letters)
             password_list.append(random_letter)
         
-            random_number = random.choice(numbers)
+            random_number = secrets.choice(numbers)
             password_list.append(random_number)
             
-            random_symbol = random.choice(symbols)
+            random_symbol = secrets.choice(symbols)
             password_list.append(random_symbol)
-            
-        random.shuffle(password_list)
+
+            secrets.SystemRandom().shuffle(password_list)
+
         password = ""
         
         for char in password_list:
@@ -41,35 +45,76 @@ class PasswordGenerator():
         
         self.__latest_password = password
         print(f"Your password is: {password}")
+        refresh()
+
     
     def save(self):
         site = input("What's the password used for: ")
-        #self.saved_passwords[site] = self.__latest_password
-        print(self.saved_passwords)
-    
+
+        if site.strip() == "":
+            print("Error: Site name cannot be empty.")
+            refresh()
+            return
+
+        if self.__latest_password is None:
+            print("No password generated yet. Please generate a password before saving.")
+            refresh()
+            return
+
+        self.__saved_passwords = {site:self.__latest_password}
+        
+        with open('passwords.json', 'r') as file:
+            data = json.load(file)
+        
+        data.update(self.__saved_passwords)
+
+        with open("passwords.json", "w") as f:
+            json.dump(data, f, indent=4)
+
+        print(self.__saved_passwords)
+        refresh()
+
     def show(self):
-        pass
+        if not os.path.exists('passwords.json') or os.stat('passwords.json').st_size == 0:
+            print("No passwords saved yet.")
+            refresh()
+            return
+
+        print("Saved Passwords:")
+
+        with open('passwords.json', 'r') as file:
+            data = json.load(file)
+        for site, password in data.items():
+            print(f"  {site}: {password}")
+        
+        refresh()
     
     def run(self):
        while True:
         print(r"""
         ------------------------------------------------
-        |   P A S S W O R D   G E N E R A T O R   v.1      |
+        |   P A S S W O R D   G E N E R A T O R   v.1  |
         ------------------------------------------------
         
-        | > Generate secure tokens                         |
-        | > Save Access Keys                               |
-        | > Safe, Encypted, Easy                           |
+        | > Generate secure tokens                     |
+        | > Save Access Keys                           |
+        | > Safe, Encypted, Easy                       |
         ------------------------------------------------
         """)
         print("1. Generate password")
         print("2. Save password")
+        print("3. Show saved passwords")
         print("4. Exit")
         choice = input("Enter your choice (1-4): ")
-        print("\n")
+        os.system('cls' if os.name == 'nt' else 'clear')
         
         if choice == '1':
             self.generate()
+            choice = input("Do you want to save this password? (y/n): ")
+            if choice.lower() == 'y':
+                self.save()
+            else:
+                refresh()
         elif choice == '2':
             self.save()
         elif choice == '3':
@@ -79,11 +124,11 @@ class PasswordGenerator():
             break
         else:
             print("Invalid choice. Please enter a number between 1 and 4.")
-    
-#if __name__ == "__main__":
-   # app = PasswordGenerator()
-    #app.run()
-app = PasswordGenerator()
 
-app.generate()
-app.save()
+def refresh():
+    time.sleep(sleep_time)
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+if __name__ == "__main__":
+    app = PasswordGenerator()
+    app.run()
