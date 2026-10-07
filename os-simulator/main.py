@@ -1,16 +1,21 @@
 from simulator import SystemSimulator
 from models import Job
+from memory_manager import AllocationStrategy
 
 
 def main() -> None:
-    simulator = SystemSimulator(330)
+    simulator = SystemSimulator(total_memory=330)
 
     while True:
-        print("\n=== UMP OS Simulator ===")
+        print("\n=== OS Sim 2000 ===")
+        print(f"Memory Strategy: {simulator.memory_manager.strategy.value}")
         print("1. Add job")
         print("2. Finish job")
         print("3. Show memory")
         print("4. Show jobs")
+        print("5. Show FCFS ready queue")
+        print("6. Show event log")
+        print("7. Set memory allocation strategy")
         print("0. Exit")
 
         choice = input("Choose an option: ").strip()
@@ -23,40 +28,48 @@ def main() -> None:
                 arrival = int(input("Arrival time: "))
 
                 job = Job(job_id, memory, burst, arrival)
+                allocated = simulator.submit_job(job)
 
-                if simulator.submit_job(job):
-                    print("Job accepted.")
+                if allocated:
+                    print(f"{job.job_id} accepted and allocated memory.")
                 else:
-                    print("Job could not be allocated and is Waiting.")
+                    print(f"{job.job_id} could not be allocated and is Waiting.")
 
             elif choice == "2":
                 job_id = input("Job ID to finish: ").strip()
-
                 if simulator.finish_job(job_id):
-                    print("Job finished and memory released.")
+                    print(f"{job_id} finished and memory was released.")
                 else:
-                    print("Job not found or has no allocation.")
+                    print(f"Could not finish '{job_id}'.")
 
             elif choice == "3":
-                for block in simulator.memory_manager.get_blocks():
-                    owner = block.job_id or "FREE"
-
-                    print(
-                        f"{block.start_address}K - "
-                        f"{block.start_address + block.size}K : "
-                        f"{owner}"
-                    )
+                simulator.show_memory()
 
             elif choice == "4":
-                for job in simulator.jobs:
-                    print(
-                        job.job_id,
-                        job.memory_required,
-                        job.cpu_burst,
-                        job.state.value
-                    )
+                simulator.show_jobs()
+
+            elif choice == "5":
+                simulator.show_ready_queue()
+
+            elif choice == "6":
+                simulator.show_log()
+
+            elif choice == "7":
+                print("\n1. First-Fit")
+                print("2. Best-Fit")
+                strategy_choice = input("Choose strategy: ").strip()
+
+                if strategy_choice == "1":
+                    simulator.memory_manager.set_strategy(AllocationStrategy.FIRST_FIT)
+                    print("Memory allocation strategy set to First-Fit.")
+                elif strategy_choice == "2":
+                    simulator.memory_manager.set_strategy(AllocationStrategy.BEST_FIT)
+                    print("Memory allocation strategy set to Best-Fit.")
+                else:
+                    print("Invalid strategy.")
 
             elif choice == "0":
+                print("Goodbye.")
                 break
 
             else:
