@@ -20,7 +20,7 @@ class SystemSimulator:
         if block is None:
             job.set_state(ProcessState.WAITING)
             self.log_event(
-                f"{job.job_id} could not be allocated {job.memory_required}K; job is Waiting."
+                f"{job.job_id} could not be allocated ({job.memory_required}K); job is Waiting."
             )
             return False
 
@@ -31,6 +31,28 @@ class SystemSimulator:
         )
         self.log_event(f"{job.job_id} added to FCFS ready queue.")
         return True
+
+    def run_cpu(self) -> list[tuple[str, int, int]]:
+        """Run the current ready queue, then release completed jobs."""
+        timeline = self.cpu_manager.run_fcfs()
+
+        completed_job_ids = [
+            job_id
+            for job_id, _, _ in timeline
+            if job_id != "IDLE"
+        ]
+
+        for job_id in completed_job_ids:
+            job = self.get_job(job_id)
+            if job is None:
+                continue
+
+            self.log_event(
+                f"{job.job_id} executed from {job.start_time} to {job.completion_time}."
+            )
+            self.finish_job(job.job_id)
+
+        return timeline
 
     def finish_job(self, job_id: str) -> bool:
         job = self.get_job(job_id)
@@ -83,18 +105,33 @@ class SystemSimulator:
 
     def show_jobs(self) -> None:
         print("\nJobs")
-        print("-" * 60)
+        print("-" * 80)
         for job in self.jobs:
             memory = f"{job.memory_start}K" if job.memory_start is not None else "-"
+            waiting = job.waiting_time if job.waiting_time is not None else "-"
+            turnaround = job.turnaround_time if job.turnaround_time is not None else "-"
             print(
                 f"{job.job_id:<8} {job.memory_required:>5}K "
-                f"CPU={job.cpu_burst:<3} State={job.state.value:<10} Start={memory}"
+                f"CPU={job.cpu_burst:<3} State={job.state.value:<10} "
+                f"Start={memory:<5} Wait={waiting:<3} Turn={turnaround:<3}"
             )
 
     def show_ready_queue(self) -> None:
         queue = self.cpu_manager.get_ready_queue()
         ids = " -> ".join(job.job_id for job in queue) or "EMPTY"
         print(f"\n{self.cpu_manager.strategy.value} Ready Queue: {ids}")
+
+    def show_gantt(self) -> None:
+        timeline = self.cpu_manager.get_gantt_timeline()
+        if not timeline:
+            print("\nGantt Timeline: EMPTY")
+            return
+
+        print("\nFCFS Gantt Timeline")
+        print("-" * 60)
+        print(" | ".join(f"{job_id} [{start}-{end}]" for job_id, start, end in timeline))
+        print(f"Average waiting time: {self.cpu_manager.get_average_waiting_time():.2f}")
+        print(f"Average turnaround time: {self.cpu_manager.get_average_turnaround_time():.2f}")
 
     def show_log(self) -> None:
         print("\nEvent Log")
