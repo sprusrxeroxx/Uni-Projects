@@ -38,17 +38,34 @@ class SystemSimulator:
             return False
 
         released = self.memory_manager.deallocate(job)
-        if released:
-            job.set_state(ProcessState.TERMINATED)
-            self.cpu_manager.ready_queue = [
-                queued_job
-                for queued_job in self.cpu_manager.ready_queue
-                if queued_job.job_id != job.job_id
-            ]
-            self.log_event(f"{job.job_id} terminated and released {job.memory_required}K.")
-            return True
+        if not released:
+            return False
 
-        return False
+        job.set_state(ProcessState.TERMINATED)
+        self.cpu_manager.remove_job(job.job_id)
+
+        self.log_event(
+            f"{job.job_id} terminated and released {job.memory_required}K."
+        )
+
+        self._admit_waiting_jobs()
+        return True
+
+    def _admit_waiting_jobs(self) -> None:
+        for job in self.jobs:
+            if job.state != ProcessState.WAITING:
+                continue
+
+            block = self.memory_manager.allocate(job)
+            if block is None:
+                continue
+
+            self.cpu_manager.add_job(job)
+            self.log_event(
+                f"{job.job_id} was Waiting and is now allocated "
+                f"{job.memory_required}K at {block.start_address}K."
+            )
+            self.log_event(f"{job.job_id} added to FCFS ready queue.")
 
     def get_job(self, job_id: str) -> Job | None:
         return next((job for job in self.jobs if job.job_id == job_id), None)
@@ -77,7 +94,7 @@ class SystemSimulator:
     def show_ready_queue(self) -> None:
         queue = self.cpu_manager.get_ready_queue()
         ids = " -> ".join(job.job_id for job in queue) or "EMPTY"
-        print(f"\nFCFS Ready Queue: {ids}")
+        print(f"\n{self.cpu_manager.strategy.value} Ready Queue: {ids}")
 
     def show_log(self) -> None:
         print("\nEvent Log")
