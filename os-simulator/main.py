@@ -16,7 +16,7 @@ def main() -> None:
         print("3. Run CPU")
         print("4. Show memory")
         print("5. Show jobs")
-        print("6. Show FCFS ready queue")
+        print("6. Show ready queue")
         print("7. Show Gantt timeline")
         print("8. Show event log")
         print("9. Set memory allocation strategy")
