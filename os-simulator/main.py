@@ -9,13 +9,16 @@ def main() -> None:
     while True:
         print("\n=== OS Sim 2000 ===")
         print(f"Memory Strategy: {simulator.memory_manager.strategy.value}")
+        print(f"CPU Strategy: {simulator.cpu_manager.strategy.value}")
         print("1. Add job")
         print("2. Finish job")
-        print("3. Show memory")
-        print("4. Show jobs")
-        print("5. Show FCFS ready queue")
-        print("6. Show event log")
-        print("7. Set memory allocation strategy")
+        print("3. Run FCFS CPU")
+        print("4. Show memory")
+        print("5. Show jobs")
+        print("6. Show FCFS ready queue")
+        print("7. Show Gantt timeline")
+        print("8. Show event log")
+        print("9. Set memory allocation strategy")
         print("0. Exit")
 
         choice = input("Choose an option: ").strip()
@@ -43,18 +46,28 @@ def main() -> None:
                     print(f"Could not finish '{job_id}'.")
 
             elif choice == "3":
-                simulator.show_memory()
+                timeline = simulator.run_cpu()
+                if timeline:
+                    print("FCFS execution complete.")
+                else:
+                    print("Ready queue is empty.")
 
             elif choice == "4":
-                simulator.show_jobs()
+                simulator.show_memory()
 
             elif choice == "5":
-                simulator.show_ready_queue()
+                simulator.show_jobs()
 
             elif choice == "6":
-                simulator.show_log()
+                simulator.show_ready_queue()
 
             elif choice == "7":
+                simulator.show_gantt()
+
+            elif choice == "8":
+                simulator.show_log()
+
+            elif choice == "9":
                 print("\n1. First-Fit")
                 print("2. Best-Fit")
                 strategy_choice = input("Choose strategy: ").strip()
