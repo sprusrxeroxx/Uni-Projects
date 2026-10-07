@@ -34,7 +34,7 @@ class SystemSimulator:
 
     def run_cpu(self) -> list[tuple[str, int, int]]:
         """Run the current ready queue, then release completed jobs."""
-        timeline = self.cpu_manager.run_fcfs()
+        timeline = self.cpu_manager.run()
 
         completed_job_ids = [
             job_id
@@ -127,7 +127,7 @@ class SystemSimulator:
             print("\nGantt Timeline: EMPTY")
             return
 
-        print("\nFCFS Gantt Timeline")
+        print(f"\n{self.cpu_manager.strategy.value} Gantt Timeline")
         print("-" * 60)
         print(" | ".join(f"{job_id} [{start}-{end}]" for job_id, start, end in timeline))
         print(f"Average waiting time: {self.cpu_manager.get_average_waiting_time():.2f}")
