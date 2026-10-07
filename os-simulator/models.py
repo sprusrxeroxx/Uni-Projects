@@ -19,6 +19,10 @@ class Job:
     arrival_time: int = 0
     state: ProcessState = ProcessState.NEW
     memory_start: Optional[int] = None
+    start_time: Optional[int] = None
+    completion_time: Optional[int] = None
+    waiting_time: Optional[int] = None
+    turnaround_time: Optional[int] = None
 
     def __post_init__(self) -> None:
         if not self.job_id.strip():
@@ -38,6 +42,12 @@ class Job:
 
     def clear_memory_allocation(self) -> None:
         self.memory_start = None
+
+    def set_execution_times(self, start_time: int, completion_time: int) -> None:
+        self.start_time = start_time
+        self.completion_time = completion_time
+        self.waiting_time = start_time - self.arrival_time
+        self.turnaround_time = completion_time - self.arrival_time
 
 
 @dataclass
