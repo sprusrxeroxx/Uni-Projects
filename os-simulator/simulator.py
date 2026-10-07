@@ -20,7 +20,7 @@ class SystemSimulator:
         if block is None:
             job.set_state(ProcessState.WAITING)
             self.log_event(
-                f"{job.job_id} could not be allocated ({job.memory_required}K); job is Waiting."
+                f"{job.job_id} could not be allocated {job.memory_required}K; job is Waiting."
             )
             return False
 
