@@ -1,4 +1,5 @@
 from cpu_manager import CPUManager
+from device_manager import DeviceManager
 from memory_manager import MemoryManager
 from models import Job, ProcessState
 
@@ -8,6 +9,7 @@ class SystemSimulator:
         self.jobs: list[Job] = []
         self.memory_manager = MemoryManager(total_memory)
         self.cpu_manager = CPUManager()
+        self.device_manager = DeviceManager()
         self.event_log: list[str] = []
 
     def submit_job(self, job: Job) -> bool:
@@ -88,6 +90,61 @@ class SystemSimulator:
                 f"{job.memory_required}K at {block.start_address}K."
             )
             self.log_event(f"{job.job_id} added to FCFS ready queue.")
+
+
+    def request_printer(self, job_id: str) -> bool:
+        job = self.get_job(job_id)
+        if job is None or job.state == ProcessState.TERMINATED:
+            return False
+
+        if self.device_manager.get_current_job() is job:
+            return False
+
+        allocated = self.device_manager.request_device(job)
+
+        job.set_state(ProcessState.WAITING)
+        self.cpu_manager.remove_job(job.job_id)
+
+        if allocated:
+            self.log_event(f"Printer allocated to {job.job_id}; job is Waiting for I/O.")
+            return True
+
+        self.log_event(f"{job.job_id} is Waiting for the printer.")
+        return False
+
+    def release_printer(self) -> bool:
+        released_job, next_job = self.device_manager.release_device()
+
+        if released_job is None:
+            return False
+
+        self.log_event(f"Printer released by {released_job.job_id}.")
+
+        if released_job.state != ProcessState.TERMINATED:
+            released_job.set_state(ProcessState.READY)
+            self.cpu_manager.add_job(released_job)
+
+        if next_job is not None:
+            next_job.set_state(ProcessState.WAITING)
+            self.log_event(
+                f"Printer allocated to {next_job.job_id}; job remains Waiting for I/O."
+            )
+
+        return True
+
+    def show_device(self) -> None:
+        status = self.device_manager.get_status().value
+        current = self.device_manager.get_current_job()
+        owner = current.job_id if current else "-"
+        queue = self.device_manager.get_waiting_queue()
+        queue_ids = " -> ".join(job.job_id for job in queue) or "EMPTY"
+
+        print("\nDevice Manager")
+        print("-" * 40)
+        print(f"Device: Printer")
+        print(f"Status: {status}")
+        print(f"Current owner: {owner}")
+        print(f"Waiting queue: {queue_ids}")
 
     def get_job(self, job_id: str) -> Job | None:
         return next((job for job in self.jobs if job.job_id == job_id), None)
