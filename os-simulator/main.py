@@ -8,7 +8,7 @@ def main() -> None:
     simulator = SystemSimulator(total_memory=330)
 
     while True:
-        print("\n=== OS Sim 2000 v5 ===")
+        print("\n=== UMP OS Simulator - Phase 6 ===")
         print(f"Memory Strategy: {simulator.memory_manager.strategy.value}")
         print(f"CPU Strategy: {simulator.cpu_manager.strategy.value}")
         print("1. Add job")
@@ -16,11 +16,14 @@ def main() -> None:
         print("3. Run CPU")
         print("4. Show memory")
         print("5. Show jobs")
-        print("6. Show ready queue")
+        print("6. Show FCFS ready queue")
         print("7. Show Gantt timeline")
         print("8. Show event log")
         print("9. Set memory allocation strategy")
         print("10. Set CPU scheduling strategy")
+        print("11. Request printer")
+        print("12. Release printer")
+        print("13. Show device status")
         print("0. Exit")
 
         choice = input("Choose an option: ").strip()
@@ -100,6 +103,28 @@ def main() -> None:
                     print(f"CPU scheduling strategy set to Round Robin (quantum={quantum}).")
                 else:
                     print("Invalid strategy.")
+
+            elif choice == "11":
+                job_id = input("Job ID requesting printer: ").strip()
+                if simulator.request_printer(job_id):
+                    print(f"{job_id} received the printer.")
+                else:
+                    job = simulator.get_job(job_id)
+                    if job is None:
+                        print(f"Job '{job_id}' was not found.")
+                    elif simulator.device_manager.get_current_job() is job:
+                        print(f"{job_id} already has the printer.")
+                    else:
+                        print(f"{job_id} is waiting for the printer.")
+
+            elif choice == "12":
+                if simulator.release_printer():
+                    print("Printer released.")
+                else:
+                    print("Printer is already free.")
+
+            elif choice == "13":
+                simulator.show_device()
 
             elif choice == "0":
                 print("Goodbye.")
