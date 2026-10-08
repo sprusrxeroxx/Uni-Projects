@@ -12,28 +12,6 @@ class SystemSimulator:
         self.device_manager = DeviceManager()
         self.event_log: list[str] = []
 
-    def submit_job(self, job: Job) -> bool:
-        if any(existing.job_id == job.job_id for existing in self.jobs):
-            raise ValueError(f"Job '{job.job_id}' already exists.")
-
-        self.jobs.append(job)
-
-        block = self.memory_manager.allocate(job)
-        if block is None:
-            job.set_state(ProcessState.WAITING)
-            self.log_event(
-                f"{job.job_id} could not be allocated ({job.memory_required}K); job is Waiting."
-            )
-            return False
-
-        self.cpu_manager.add_job(job)
-        self.log_event(
-            f"{job.job_id} allocated {job.memory_required}K at "
-            f"{block.start_address}K using {self.memory_manager.strategy.value}."
-        )
-        self.log_event(f"{job.job_id} added to FCFS ready queue.")
-        return True
-
     def run_cpu(self) -> list[tuple[str, int, int]]:
         """Run the current ready queue, then release completed jobs."""
         timeline = self.cpu_manager.run()
@@ -91,7 +69,6 @@ class SystemSimulator:
             )
             self.log_event(f"{job.job_id} added to FCFS ready queue.")
 
-
     def request_printer(self, job_id: str) -> bool:
         job = self.get_job(job_id)
         if job is None or job.state == ProcessState.TERMINATED:
@@ -132,6 +109,9 @@ class SystemSimulator:
 
         return True
 
+    def get_job(self, job_id: str) -> Job | None:
+        return next((job for job in self.jobs if job.job_id == job_id), None)
+
     def show_device(self) -> None:
         status = self.device_manager.get_status().value
         current = self.device_manager.get_current_job()
@@ -145,9 +125,44 @@ class SystemSimulator:
         print(f"Status: {status}")
         print(f"Current owner: {owner}")
         print(f"Waiting queue: {queue_ids}")
+    
+    def submit_job(self, job: Job) -> bool:
+        if any(existing.job_id == job.job_id for existing in self.jobs):
+            raise ValueError(f"Job '{job.job_id}' already exists.")
 
-    def get_job(self, job_id: str) -> Job | None:
-        return next((job for job in self.jobs if job.job_id == job_id), None)
+        self.jobs.append(job)
+
+        block = self.memory_manager.allocate(job)
+
+        if block is None:
+            job.set_state(ProcessState.WAITING)
+
+            reason = self.memory_manager.get_allocation_failure_reason(
+                job.memory_required
+            )
+
+            self.log_event(
+                f"{job.job_id} could not be allocated "
+                f"({job.memory_required}K); "
+                f"job is Waiting. {reason}"
+            )
+
+            return False
+
+        self.cpu_manager.add_job(job)
+
+        self.log_event(
+            f"{job.job_id} allocated "
+            f"{job.memory_required}K at "
+            f"{block.start_address}K using "
+            f"{self.memory_manager.strategy.value}."
+        )
+
+        self.log_event(
+            f"{job.job_id} added to FCFS ready queue."
+        )
+
+        return True
 
     def log_event(self, message: str) -> None:
         self.event_log.append(message)
