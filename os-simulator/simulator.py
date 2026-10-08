@@ -31,7 +31,8 @@ class SystemSimulator:
                 f"{job.job_id} executed from {job.start_time} to {job.completion_time}."
             )
             self.finish_job(job.job_id)
-
+            
+        self.show_gantt()
         return timeline
 
     def finish_job(self, job_id: str) -> bool:
@@ -50,7 +51,7 @@ class SystemSimulator:
             f"{job.job_id} terminated and released {job.memory_required}K."
         )
 
-        self._admit_waiting_jobs()
+        self.show_memory()
         return True
 
     def _admit_waiting_jobs(self) -> None:
@@ -68,6 +69,7 @@ class SystemSimulator:
                 f"{job.memory_required}K at {block.start_address}K."
             )
             self.log_event(f"{job.job_id} added to FCFS ready queue.")
+            self.show_ready_queue()
 
     def request_printer(self, job_id: str) -> bool:
         job = self.get_job(job_id)
@@ -157,6 +159,7 @@ class SystemSimulator:
             f"{block.start_address}K using "
             f"{self.memory_manager.strategy.value}."
         )
+        self.show_memory()
 
         self.log_event(
             f"{job.job_id} added to FCFS ready queue."
